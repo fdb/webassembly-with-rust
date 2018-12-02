@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+<script>
+async function init() {
+  const res = await fetch('add1.wasm');
+  const buffer = await res.arrayBuffer();
+  const wasm = await WebAssembly.instantiate(buffer);
+  // console.log(wasm);
+  const { add } =  wasm.instance.exports;
+  const result = add(3, 5);
+  console.log(`3 + 5 = ${result}`);
+}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "checkers",
+  "version": "1.0.0",
+  "description": "",
+  "main": "test.js",
+  "scripts": {
+    "test": "npm run build && mocha",
+    "build": "wat2wasm checkers.wat"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "mocha": "5.2.0"
+  }
+}

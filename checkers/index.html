@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+<script>
+async function init() {
+  const res = await fetch('checkers.wasm');
+  const buffer = await res.arrayBuffer();
+  const wasm = await WebAssembly.instantiate(buffer);
+  // console.log(wasm);
+  const { indexForPosition, offsetForPosition } =  wasm.instance.exports;
+  console.log(`indexForPosition(3, 4) = ${indexForPosition(3, 4)}`);
+  console.log(`offsetForPosition(3, 4) = ${offsetForPosition(3, 4)}`);
+
+  const { isWhite, isBlack } =  wasm.instance.exports;
+  let whitePiece = 2;
+  let blackPiece = 1;
+  console.log(`isWhite(whitePiece) = ${isWhite(whitePiece)}`);
+  console.log(`isWhite(blackPiece) = ${isWhite(blackPiece)}`);
+
+  const { withCrown, withoutCrown } =  wasm.instance.exports;
+  whitePiece = withCrown(whitePiece);
+  console.log(`withCrown(whitePiece) = ${whitePiece}`);
+
+
+
+}
+init();
+</script>
+</body>
+</html>
