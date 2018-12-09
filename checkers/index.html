@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Wasm Checkers</title>
   <style>
     * { box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; }
@@ -32,17 +32,6 @@ class Board extends Component {
   constructor(props) {
     super(props);
     this.state = { selectedPiece: null };
-    checkers.crownPiece(1, 0);
-    checkers.crownPiece(0, 7);
-    // checkers.crownPiece(1, 1);
-    // checkers.crownPiece(1, 1);
-    // checkers.crownPiece(1, 1);
-    // checkers.crownPiece(1, 2);
-    // checkers.setPiece(0, 0, CROWN | WHITE);
-    // checkers.crownPiece(1, 0);
-    // checkers.setPiece(1, 0, CROWN | WHITE);
-    // checkers.crownPiece(2, 2);
-    //this.state = { board: }
   }
 
   selectPiece(e, x, y) {
@@ -133,20 +122,6 @@ async function init() {
   const wasm = await WebAssembly.instantiate(buffer, { events });
   window.checkers = wasm.instance.exports;
   render(html`<${App} />`, document.body);
-  // // console.log(wasm);
-  // const { indexForPosition, offsetForPosition } =  wasm.instance.exports;
-  // console.log(`indexForPosition(3, 4) = ${indexForPosition(3, 4)}`);
-  // console.log(`offsetForPosition(3, 4) = ${offsetForPosition(3, 4)}`);
-
-  // const { isWhite, isBlack } =  wasm.instance.exports;
-  // let whitePiece = 2;
-  // let blackPiece = 1;
-  // console.log(`isWhite(whitePiece) = ${isWhite(whitePiece)}`);
-  // console.log(`isWhite(blackPiece) = ${isWhite(blackPiece)}`);
-
-  // const { withCrown, withoutCrown } =  wasm.instance.exports;
-  // whitePiece = withCrown(whitePiece);
-  // console.log(`withCrown(whitePiece) = ${whitePiece}`);
 }
 init();
 </script>
