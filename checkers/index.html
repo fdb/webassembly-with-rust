@@ -4,30 +4,149 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body { display: flex; justify-content: center; align-items: center; }
+    .turn-owner { position: fixed; top: 20px; left: 20px; }
+    .turn-owner .piece.owner { border: 3px solid #30c2ff;  }
+    .cell { width: 40px; height: 40px; }
+    .cell.even { background: #ddd; }
+    .row { display: flex; flex-direction: row; width: calc(8 * 40px); }
+    .board { display: flex; flex-direction: column; width: calc(8 * 40px); border: 1px solid #ddd; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);  }
+    .piece.white { background: #fdfdfd; width: 30px; height: 30px; border: 1px solid #999; border-radius: 50%; margin: 5px; }
+    .piece.black { background: black; width: 30px; height: 30px; border: 1px solid #999; border-radius: 50%; margin: 5px; }
+    .piece.crown { border-width: 2px; box-shadow: 2px 2px 1px #333; }
+    .piece.selected { background: #30c2ff !important; }
+  </style>
 </head>
 <body>
-<script>
+<script type="module">
+import { html, Component, render } from './preact-htm.mjs'
+
+const BLACK = 1;
+const WHITE = 2;
+const CROWN = 4;
+
+class Board extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { selectedPiece: null };
+    checkers.crownPiece(1, 0);
+    checkers.crownPiece(0, 7);
+    // checkers.crownPiece(1, 1);
+    // checkers.crownPiece(1, 1);
+    // checkers.crownPiece(1, 1);
+    // checkers.crownPiece(1, 2);
+    // checkers.setPiece(0, 0, CROWN | WHITE);
+    // checkers.crownPiece(1, 0);
+    // checkers.setPiece(1, 0, CROWN | WHITE);
+    // checkers.crownPiece(2, 2);
+    //this.state = { board: }
+  }
+
+  selectPiece(e, x, y) {
+    e.stopPropagation();
+    this.setState({ selectedPiece: { x, y } });
+  }
+
+  selectCell(x, y) {
+    if (this.state.selectedPiece) {
+      const [sx, sy] = [this.state.selectedPiece.x, this.state.selectedPiece.y];
+      checkers.move(sx, sy, x, y);
+      this.props.onMove();
+    }
+    this.setState({ selectedPiece: null });
+  }
+
+  render() {
+    let sx = -1;
+    let sy = -1;
+    if (this.state.selectedPiece) {
+      [sx, sy] = [this.state.selectedPiece.x, this.state.selectedPiece.y];
+    }
+    const rows = [];
+    for (let y = 0; y < 8; y++) {
+      const cells = [];
+      for (let x = 0; x < 8; x++) {
+        const piece = checkers.getPiece(x, y);
+        let pieceClass = 'piece';
+        if ((piece & WHITE) === WHITE) {
+          pieceClass += ' white';
+        }
+        if ((piece & BLACK) === BLACK) {
+          pieceClass += ' black';
+        }
+        if ((piece & CROWN) === CROWN) {
+          pieceClass += ' crown';
+        }
+        if (x === sx && y === sy) {
+          pieceClass += ' selected';
+        }
+        let cellClass = 'cell';
+        if ((y % 2) === 0 && (x % 2) !== 0) {
+          cellClass += ' even';
+        }
+        if ((y % 2) !== 0 && (x % 2) === 0) {
+          cellClass += ' even';
+        }
+        const cell = html`<div class="${cellClass}" onClick="${this.selectCell.bind(this, x, y)}"><div class="${pieceClass}" onClick="${(e) => this.selectPiece(e, x, y)}" /></div>`
+        cells.push(cell);
+      }
+      const row = html`<div class="row">${cells}</div>`
+      rows.push(row);
+    }
+    return html`<div class="board">${rows}</div>`;
+  }
+}
+
+class App extends Component {
+  constructor(props) {
+    super(props);
+    checkers.initBoard();
+  }
+
+  onMove() {
+    this.forceUpdate();
+  }
+
+  render() {
+    const turnOwner = checkers.getTurnOwner();
+    return html`<div class="app">
+      <div class="turn-owner">
+        <div class="piece white ${ turnOwner === WHITE ? ' owner' : ''}" />
+        <div class="piece black ${ turnOwner === BLACK ? ' owner' : ''}" />
+      </div>
+      <${Board} onMove="${this.onMove.bind(this)}" />
+    </div>`;
+  }
+}
+
 async function init() {
   const res = await fetch('checkers.wasm');
   const buffer = await res.arrayBuffer();
-  const wasm = await WebAssembly.instantiate(buffer);
-  // console.log(wasm);
-  const { indexForPosition, offsetForPosition } =  wasm.instance.exports;
-  console.log(`indexForPosition(3, 4) = ${indexForPosition(3, 4)}`);
-  console.log(`offsetForPosition(3, 4) = ${offsetForPosition(3, 4)}`);
+  window.notifications = [];
+  const events = {
+    pieceCrowned: (x, y) => notifications.push({ type: 'pieceCrowned', x, y }),
+    pieceMoved: (fromX, fromY, toX, toY) => notifications.push({ type: 'pieceMoved', fromX, fromY, toX, toY })
+  };
+  const wasm = await WebAssembly.instantiate(buffer, { events });
+  window.checkers = wasm.instance.exports;
+  render(html`<${App} />`, document.body);
+  // // console.log(wasm);
+  // const { indexForPosition, offsetForPosition } =  wasm.instance.exports;
+  // console.log(`indexForPosition(3, 4) = ${indexForPosition(3, 4)}`);
+  // console.log(`offsetForPosition(3, 4) = ${offsetForPosition(3, 4)}`);
 
-  const { isWhite, isBlack } =  wasm.instance.exports;
-  let whitePiece = 2;
-  let blackPiece = 1;
-  console.log(`isWhite(whitePiece) = ${isWhite(whitePiece)}`);
-  console.log(`isWhite(blackPiece) = ${isWhite(blackPiece)}`);
+  // const { isWhite, isBlack } =  wasm.instance.exports;
+  // let whitePiece = 2;
+  // let blackPiece = 1;
+  // console.log(`isWhite(whitePiece) = ${isWhite(whitePiece)}`);
+  // console.log(`isWhite(blackPiece) = ${isWhite(blackPiece)}`);
 
-  const { withCrown, withoutCrown } =  wasm.instance.exports;
-  whitePiece = withCrown(whitePiece);
-  console.log(`withCrown(whitePiece) = ${whitePiece}`);
-
-
-
+  // const { withCrown, withoutCrown } =  wasm.instance.exports;
+  // whitePiece = withCrown(whitePiece);
+  // console.log(`withCrown(whitePiece) = ${whitePiece}`);
 }
 init();
 </script>

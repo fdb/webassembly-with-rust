@@ -12,7 +12,8 @@ describe('Checkers', () => {
   beforeEach(async () => {
     const buffer = fs.readFileSync('checkers.wasm');
     const events = {
-      pieceCrowned: (x, y) => notifications.push({ type: 'pieceCrowned', x, y })
+      pieceCrowned: (x, y) => notifications.push({ type: 'pieceCrowned', x, y }),
+      pieceMoved: (fromX, fromY, toX, toY) => notifications.push({ type: 'pieceMoved', fromX, fromY, toX, toY })
     };
     const wasm = await WebAssembly.instantiate(buffer, { events });
     checkers = wasm.instance.exports;
@@ -46,11 +47,11 @@ describe('Checkers', () => {
 
   it('can crown a piece', () => {
     checkers.setPiece(0, 0, BLACK);
-    assert.strictEqual(checkers.isCrowned(checkers.getPiece(0, 0)), 0);
-    checkers.crownPiece(0, 0);
-    assert.strictEqual(checkers.isCrowned(checkers.getPiece(0, 0)), 1);
+    assert.strictEqual(checkers.isCrowned(checkers.getPiece(3, 5)), 0);
+    checkers.crownPiece(3, 5);
+    assert.strictEqual(checkers.isCrowned(checkers.getPiece(3, 5)), 1);
     assert.strictEqual(notifications.length, 1);
-    assert.deepStrictEqual(notifications[0], { type: 'pieceCrowned', x: 0, y: 0 });
+    assert.deepStrictEqual(notifications[0], { type: 'pieceCrowned', x: 3, y: 5 });
   });
 
   it('can check for a valid move', () => {
@@ -63,6 +64,30 @@ describe('Checkers', () => {
     assert.strictEqual(checkers.isValidMove(5, 0, 5, 1), 1);
     assert.strictEqual(checkers.isValidMove(5, 0, 5, 2), 1);
     assert.strictEqual(checkers.isValidMove(5, 0, 5, 3), 0);
+  });
+
+  it('can setup the game board', () => {
+    checkers.initBoard();
+    let i = 0;
+    while (i < 7) {
+      assert.strictEqual(checkers.getPiece(i++, 0), 0);
+      assert.strictEqual(checkers.getPiece(i++, 0), WHITE);
+    }
+    assert.strictEqual(checkers.getTurnOwner(), BLACK);
+  });
+
+  it('can make a valid move', () => {
+    let result;
+    checkers.initBoard();
+    assert.strictEqual(checkers.getTurnOwner(), BLACK);
+    // Try to move a white piece.
+    assert.strictEqual(checkers.getPiece(1, 0), WHITE);
+    result = checkers.move(1, 0, 2, 1);
+    assert.strictEqual(result, 0); // 0 = invalid move
+    // Try to move a black piece.
+    assert.strictEqual(checkers.getPiece(2, 7), BLACK);
+    result = checkers.move(2, 7, 2, 6);
+    assert.strictEqual(result, 1); // 1 = valid move
   });
 
 });

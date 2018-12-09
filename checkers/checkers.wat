@@ -2,6 +2,7 @@
 ;; Core game board is 8x8
 (module
   (import "events" "pieceCrowned" (func $notifyPieceCrowned (param $x i32) (param $y i32)))
+  (import "events" "pieceMoved" (func $notifyPieceMoved (param $fromX i32) (param $fromY i32) (param $toX i32) (param $toY i32)))
 
   (memory $mem 1)
   (global $currentTurn (mut i32) (i32.const 0))
@@ -145,7 +146,7 @@
     (local $crownedPiece i32)
     (set_local $piece (call $getPiece (get_local $x) (get_local $y)))
     (set_local $crownedPiece (call $withCrown (get_local $piece)))
-    (call $setPiece (get_local $x) (get_local $x) (get_local $crownedPiece))
+    (call $setPiece (get_local $x) (get_local $y) (get_local $crownedPiece))
     (call $notifyPieceCrowned (get_local $x) (get_local $y))
   )
 
@@ -186,6 +187,68 @@
     (i32.le_u (get_local $d) (i32.const 2))
   )
 
+  ;; Main move function to be called by the game host
+  (func $move (param $fromX i32) (param $fromY i32) (param $toX i32) (param $toY i32) (result i32)
+    (if (result i32)
+      (block (result i32)
+        (call $isValidMove (get_local $fromX) (get_local $fromY) (get_local $toX) (get_local $toY))
+      )
+      (then
+        (call $doMove (get_local $fromX) (get_local $fromY) (get_local $toX) (get_local $toY))
+      )
+      (else (i32.const 0))
+    )
+  )
+
+  (func $doMove (param $fromX i32) (param $fromY i32) (param $toX i32) (param $toY i32) (result i32)
+    (local $curPiece i32)
+    (set_local $curPiece (call $getPiece (get_local $fromX) (get_local $fromY)))
+    (call $toggleTurnOwner)
+    (call $setPiece (get_local $toX) (get_local $toY) (get_local $curPiece))
+    (call $setPiece (get_local $fromX) (get_local $fromY) (i32.const 0))
+    (if (call $shouldCrown (get_local $toY) (get_local $curPiece))
+      (then (call $crownPiece (get_local $toX) (get_local $toY))))
+    (call $notifyPieceMoved (get_local $fromX) (get_local $fromY) (get_local $toX) (get_local $toY))
+    (i32.const 1)
+  )
+
+  ;; Manually place each piece on the board to initialize the game
+  (func $initBoard
+    ;; Place the white pieces at the top of the board
+    (call $setPiece (i32.const 1) (i32.const 0) (i32.const 2))
+    (call $setPiece (i32.const 3) (i32.const 0) (i32.const 2))
+    (call $setPiece (i32.const 5) (i32.const 0) (i32.const 2))
+    (call $setPiece (i32.const 7) (i32.const 0) (i32.const 2))
+
+    (call $setPiece (i32.const 0) (i32.const 1) (i32.const 2))
+    (call $setPiece (i32.const 2) (i32.const 1) (i32.const 2))
+    (call $setPiece (i32.const 4) (i32.const 1) (i32.const 2))
+    (call $setPiece (i32.const 6) (i32.const 1) (i32.const 2))
+
+    (call $setPiece (i32.const 1) (i32.const 2) (i32.const 2))
+    (call $setPiece (i32.const 3) (i32.const 2) (i32.const 2))
+    (call $setPiece (i32.const 5) (i32.const 2) (i32.const 2))
+    (call $setPiece (i32.const 7) (i32.const 2) (i32.const 2))
+
+    ;; Place the black pieces at the bottom of the board
+    (call $setPiece (i32.const 0) (i32.const 5) (i32.const 1))
+    (call $setPiece (i32.const 2) (i32.const 5) (i32.const 1))
+    (call $setPiece (i32.const 4) (i32.const 5) (i32.const 1))
+    (call $setPiece (i32.const 6) (i32.const 5) (i32.const 1))
+
+    (call $setPiece (i32.const 1) (i32.const 6) (i32.const 1))
+    (call $setPiece (i32.const 3) (i32.const 6) (i32.const 1))
+    (call $setPiece (i32.const 5) (i32.const 6) (i32.const 1))
+    (call $setPiece (i32.const 7) (i32.const 6) (i32.const 1))
+
+    (call $setPiece (i32.const 0) (i32.const 7) (i32.const 1))
+    (call $setPiece (i32.const 2) (i32.const 7) (i32.const 1))
+    (call $setPiece (i32.const 4) (i32.const 7) (i32.const 1))
+    (call $setPiece (i32.const 6) (i32.const 7) (i32.const 1))
+
+    (call $setTurnOwner (i32.const 1)) ;; Black goes first
+  )
+
   (export "indexForPosition" (func $indexForPosition))
   (export "offsetForPosition" (func $offsetForPosition))
   (export "isCrowned" (func $isCrowned))
@@ -203,4 +266,6 @@
   (export "shouldCrown" (func $shouldCrown))
   (export "crownPiece" (func $crownPiece))
   (export "isValidMove" (func $isValidMove))
+  (export "move" (func $move))
+  (export "initBoard" (func $initBoard))
 )
