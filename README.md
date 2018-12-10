@@ -16,6 +16,15 @@ I've added a graphical user interface so you're able to play the game! The inter
 
 Right now you can't drag the pieces. You can click them, then click where they need to go. In the right corner you can see who's turn it is.
 
+To run it, run a local server in the `checkers` folder. I use `serve` (`npm install -g serve`):
+
+```
+cd checkers
+serve
+```
+
+Then you can open the page at <http://localhost:5000> to play the game.
+
 ## Testing
 
 We test the WebAssembly module by loading it into Node.js, then using [Mocha](https://mochajs.org/) to describe the behavior of the module. Tests are in `test.js`.
